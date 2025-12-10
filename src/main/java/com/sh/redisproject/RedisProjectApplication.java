@@ -13,7 +13,8 @@ public class RedisProjectApplication {
         ReservationService reservationService = context.getBean(ReservationService.class);
 
 
-        reservationService.saveToRedis();
+//        reservationService.saveToRedis();
+        reservationService.insertToRedis();
     }
 
 }

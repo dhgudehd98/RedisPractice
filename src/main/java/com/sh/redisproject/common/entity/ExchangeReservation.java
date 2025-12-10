@@ -53,8 +53,8 @@ public class ExchangeReservation {
             String currencyIn,
             Long amountIn,
             String currencyOut,
-            Long amountOut
-    ) {
+            Long amountOut,
+            LocalDateTime localDateTime, ResStatus success, char n, Object o) {
         this.member = member;
         this.exchangeRate = reservationRate;
 
