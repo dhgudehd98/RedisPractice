@@ -1,13 +1,15 @@
-package com.sh.redisproject.Redis.configuration;
+package com.sh.redisproject.common.Redis.configuration;
 
 
-import org.springframework.beans.factory.annotation.Value;
+import com.sh.redisproject.common.entity.ExchangeReservation;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.JacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
@@ -37,7 +39,11 @@ public class RedisConfiguration {
         redisTemplate.setHashKeySerializer(new StringRedisSerializer());
 
         // Hash Key에 해당하는 Value 값은 JSON 형식으로 저장
-        redisTemplate.setHashValueSerializer(RedisSerializer.json());
+        // 향후 Jackson2JsonRedisSerializer에 대한 부분은 없어질 예정이고, RedisSerialize().json()으로 바뀔 예정 그럼 build.gradle에 대한 부분도 수정필요
+        Jackson2JsonRedisSerializer<ExchangeReservation> serializer =
+                new Jackson2JsonRedisSerializer<>(ExchangeReservation.class);
+
+        redisTemplate.setHashValueSerializer(serializer);
 
         return redisTemplate;
     }
