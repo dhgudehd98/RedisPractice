@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class RedisProjectApplication {
 
     public static void main(String[] args) {
+
         SpringApplication.run(RedisProjectApplication.class, args);
     }
 
