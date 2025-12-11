@@ -50,7 +50,7 @@ public class ReservationService {
      */
     @Transactional
     public void insertToRedis() {
-        Long memberId = 6L;
+        Long memberId = 12L;
         Member member = memberRepository.findById(memberId).get();
 
 
@@ -78,7 +78,7 @@ public class ReservationService {
 
     @Transactional
     public void deleteReservationToRedis() {
-        Long reservationId = 6L;
+        Long reservationId = 12L;
         ExchangeReservation reservation = reservationRepository.findById(reservationId).orElseThrow(() ->new IllegalArgumentException("존재하지 않는 예약내역입니다."));
 
         log.info("Reservation Info");
