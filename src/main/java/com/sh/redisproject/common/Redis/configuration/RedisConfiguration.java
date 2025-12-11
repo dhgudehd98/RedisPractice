@@ -3,6 +3,8 @@ package com.sh.redisproject.common.Redis.configuration;
 
 import com.sh.redisproject.common.entity.ExchangeReservation;
 
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -16,9 +18,15 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @Configuration
 public class RedisConfiguration {
 
+    @Value("${spring.data.redis.host}")
+    private String host ;
+
+    @Value("${spring.data.redis.port}")
+    private int port ;
     @Bean
     public RedisConnectionFactory redisConnectFactory() {
-        return new LettuceConnectionFactory();
+
+        return new LettuceConnectionFactory(host, port);
     }
 
     @Bean

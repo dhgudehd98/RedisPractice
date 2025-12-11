@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    container_name: redisproject-app
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: "jdbc:mysql://e-wallet-db.ctk4aceyom3u.ap-northeast-2.rds.amazonaws.com:3306/E_Wallet?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true"
+      DB_USERNAME: "E_Wallet"
+      DB_PASSWORD: "Lp2019261028"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    networks:
+      - back
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+networks:
+  back:
