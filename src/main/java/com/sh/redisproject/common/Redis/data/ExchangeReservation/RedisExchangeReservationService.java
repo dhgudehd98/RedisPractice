@@ -21,4 +21,8 @@ public class RedisExchangeReservationService {
         redisTemplate.opsForHash().put(primaryKey, reservationId, reservationObj);
     }
 
+    public void deleteReservation(String reservationId) {
+        redisTemplate.opsForHash().delete(primaryKey, reservationId);
+    }
+
 }

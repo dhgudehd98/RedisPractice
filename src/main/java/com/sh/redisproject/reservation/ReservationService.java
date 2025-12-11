@@ -31,7 +31,7 @@ public class ReservationService {
      * 일단 여기는 일괄등록을 한번 Test 해보기 위해 설정한 코드
      */
     @Transactional
-    public void saveToRedis() {
+    public void saveAllToRedis() {
         List<ExchangeReservation> list =  reservationRepository.findByResStatus(ResStatus.WAIT);
 
         for (ExchangeReservation reservation : list) {
@@ -67,9 +67,9 @@ public class ReservationService {
                 null                       // failReason
         );
 
+        // LocalDateTime, Enum과 같은 데이터는 Redis에서는 인식을 할 수 없기 때문에 Redis에서 인식할 수 있는 값으로 매핑
         ExchangeReservationDto dto = ExchangeReservationDto.fromEntity(reservationRepository.save(reservation));
         redisExchangeReservationService.saveReservation(String.valueOf(dto.getId()), dto);
-
     }
 
     /**
@@ -78,6 +78,15 @@ public class ReservationService {
 
     @Transactional
     public void deleteReservationToRedis() {
+        Long reservationId = 6L;
+        ExchangeReservation reservation = reservationRepository.findById(reservationId).orElseThrow(() ->new IllegalArgumentException("존재하지 않는 예약내역입니다."));
 
+        log.info("Reservation Info");
+        log.info(reservation.toString());
+        reservation.setResStatus(ResStatus.SUCCESS);
+
+        if (reservationRepository.save(reservation) != null) {
+            redisExchangeReservationService.deleteReservation(String.valueOf(reservation.getId()));
+        }
     }
 }
