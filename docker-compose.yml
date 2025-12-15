@@ -1,6 +1,7 @@
 version: "3.9"
 
 services:
+
   app:
     build: .
     container_name: redisproject-app
@@ -10,84 +11,101 @@ services:
       DB_URL: "jdbc:mysql://e-wallet-db.ctk4aceyom3u.ap-northeast-2.rds.amazonaws.com:3306/E_Wallet?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true"
       DB_USERNAME: "E_Wallet"
       DB_PASSWORD: "Lp2019261028"
-      SPRING_REDIS_SENTINEL_MASTER: redis-master
-      SPRING_REDIS_SENTINEL_NODES: redis-sentinel-1:26379,redis-sentinel-2:26379,redis-sentinel-3:26379
-
+      SPRING_REDIS_CLUSTER_NODES: >
+        redis-master-1:7100,
+        redis-master-2:7101,
+        redis-master-3:7102,
+        redis-slave-1:7103,
+        redis-slave-2:7104,
+        redis-slave-3:7105
     depends_on:
-      - redis-master
-      - redis-slave
-      - redis-sentinel-1
-      - redis-sentinel-2
-      - redis-sentinel-3
+      - redis-master-1
+      - redis-master-2
+      - redis-master-3
+      - redis-slave-1
+      - redis-slave-2
+      - redis-slave-3
     networks:
-      - redis-net
+      - redis-cluster-net
 
-  redis-master:
+  redis-master-1:
     image: redis:7.2
-    container_name: redis-master
+    container_name: redis-master-1
     ports:
-      - "6379:6379"
+      - "7100:7100"
+      - "17100:17100"
     volumes:
-      - ./master/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./cluster/redis-master-1/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./cluster/redis-master-1/data:/data
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     networks:
-      - redis-net
+      - redis-cluster-net
 
-  redis-slave:
+  redis-master-2:
     image: redis:7.2
-    container_name: redis-slave
-    depends_on:
-      - redis-master
+    container_name: redis-master-2
     ports:
-      - "6380:6380"
+      - "7200:7200"
+      - "17200:17200"
     volumes:
-      - ./slave/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./cluster/redis-master-2/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./cluster/redis-master-2/data:/data
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     networks:
-      - redis-net
+      - redis-cluster-net
 
-  redis-sentinel-1:
+  redis-master-3:
     image: redis:7.2
-    container_name: redis-sentinel-1
-    depends_on:
-      - redis-master
-      - redis-slave
+    container_name: redis-master-3
     ports:
-      - "26379:26379"
+      - "7300:7300"
+      - "17300:17300"
     volumes:
-      - ./sentinel/sentinel-1.conf:/usr/local/etc/redis/sentinel.conf
-    command: ["redis-sentinel", "/usr/local/etc/redis/sentinel.conf"]
+      - ./cluster/redis-master-3/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./cluster/redis-master-3/data:/data
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     networks:
-      - redis-net
+      - redis-cluster-net
 
-  redis-sentinel-2:
+  redis-slave-1:
     image: redis:7.2
-    container_name: redis-sentinel-2
-    depends_on:
-      - redis-master
-      - redis-slave
+    container_name: redis-slave-1
     ports:
-      - "26380:26379"
+      - "7400:7400"
+      - "17400:17400"
     volumes:
-      - ./sentinel/sentinel-2.conf:/usr/local/etc/redis/sentinel.conf
-    command: ["redis-sentinel", "/usr/local/etc/redis/sentinel.conf"]
+      - ./cluster/redis-slave-1/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./cluster/redis-slave-1/data:/data
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     networks:
-      - redis-net
+      - redis-cluster-net
 
-  redis-sentinel-3:
+  redis-slave-2:
     image: redis:7.2
-    container_name: redis-sentinel-3
-    depends_on:
-      - redis-master
-      - redis-slave
+    container_name: redis-slave-2
     ports:
-      - "26381:26379"
+      - "7500:7500"
+      - "17500:17500"
     volumes:
-      - ./sentinel/sentinel-3.conf:/usr/local/etc/redis/sentinel.conf
-    command: ["redis-sentinel", "/usr/local/etc/redis/sentinel.conf"]
+      - ./cluster/redis-slave-2/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./cluster/redis-slave-2/data:/data
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     networks:
-      - redis-net
+      - redis-cluster-net
+
+  redis-slave-3:
+    image: redis:7.2
+    container_name: redis-slave-3
+    ports:
+      - "7600:7600"
+      - "17600:17600"
+    volumes:
+      - ./cluster/redis-slave-3/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./cluster/redis-slave-3/data:/data
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    networks:
+      - redis-cluster-net
 
 networks:
-  redis-net:
+  redis-cluster-net:
     driver: bridge
