@@ -1,0 +1,93 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    container_name: redisproject-app
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: "jdbc:mysql://e-wallet-db.ctk4aceyom3u.ap-northeast-2.rds.amazonaws.com:3306/E_Wallet?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true"
+      DB_USERNAME: "E_Wallet"
+      DB_PASSWORD: "Lp2019261028"
+      SPRING_REDIS_SENTINEL_MASTER: redis-master
+      SPRING_REDIS_SENTINEL_NODES: redis-sentinel-1:26379,redis-sentinel-2:26379,redis-sentinel-3:26379
+
+    depends_on:
+      - redis-master
+      - redis-slave
+      - redis-sentinel-1
+      - redis-sentinel-2
+      - redis-sentinel-3
+    networks:
+      - redis-net
+
+  redis-master:
+    image: redis:7.2
+    container_name: redis-master
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./master/redis.conf:/usr/local/etc/redis/redis.conf
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    networks:
+      - redis-net
+
+  redis-slave:
+    image: redis:7.2
+    container_name: redis-slave
+    depends_on:
+      - redis-master
+    ports:
+      - "6380:6380"
+    volumes:
+      - ./slave/redis.conf:/usr/local/etc/redis/redis.conf
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    networks:
+      - redis-net
+
+  redis-sentinel-1:
+    image: redis:7.2
+    container_name: redis-sentinel-1
+    depends_on:
+      - redis-master
+      - redis-slave
+    ports:
+      - "26379:26379"
+    volumes:
+      - ./sentinel/sentinel-1.conf:/usr/local/etc/redis/sentinel.conf
+    command: ["redis-sentinel", "/usr/local/etc/redis/sentinel.conf"]
+    networks:
+      - redis-net
+
+  redis-sentinel-2:
+    image: redis:7.2
+    container_name: redis-sentinel-2
+    depends_on:
+      - redis-master
+      - redis-slave
+    ports:
+      - "26380:26379"
+    volumes:
+      - ./sentinel/sentinel-2.conf:/usr/local/etc/redis/sentinel.conf
+    command: ["redis-sentinel", "/usr/local/etc/redis/sentinel.conf"]
+    networks:
+      - redis-net
+
+  redis-sentinel-3:
+    image: redis:7.2
+    container_name: redis-sentinel-3
+    depends_on:
+      - redis-master
+      - redis-slave
+    ports:
+      - "26381:26379"
+    volumes:
+      - ./sentinel/sentinel-3.conf:/usr/local/etc/redis/sentinel.conf
+    command: ["redis-sentinel", "/usr/local/etc/redis/sentinel.conf"]
+    networks:
+      - redis-net
+
+networks:
+  redis-net:
+    driver: bridge
