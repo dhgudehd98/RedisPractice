@@ -14,7 +14,8 @@ public class RedisProjectApplication {
 
 
 //        reservationService.saveToRedis();
-        reservationService.insertToRedis();
+//        reservationService.insertToRedis();
+        reservationService.getListReservation();
 //        reservationService.deleteReservationToRedis();
     }
 

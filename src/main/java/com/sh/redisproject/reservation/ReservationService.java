@@ -11,17 +11,24 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class ReservationService {
+    private final RedisTemplate<String, String> redisTemplate;
     private final RedisExchangeReservationService redisExchangeReservationService;
     private final ReservationRepository reservationRepository;
     private final MemberRepository memberRepository;
@@ -41,9 +48,10 @@ public class ReservationService {
             log.info(dto.toString());
 
             String id = String.valueOf(dto.getMemberId());
-            redisExchangeReservationService.saveReservation(id, dto);
+//            redisExchangeReservationService.saveReservation(id, dto);
         }
     }
+
 
     /**
      * 환전 예약 신청 시 Redis Update
@@ -69,7 +77,7 @@ public class ReservationService {
 
         // LocalDateTime, Enum과 같은 데이터는 Redis에서는 인식을 할 수 없기 때문에 Redis에서 인식할 수 있는 값으로 매핑
         ExchangeReservationDto dto = ExchangeReservationDto.fromEntity(reservationRepository.save(reservation));
-        redisExchangeReservationService.saveReservation(String.valueOf(dto.getId()), dto);
+//        redisExchangeReservationService.saveReservation(String.valueOf(dto.getId()), dto);
     }
 
     /**
@@ -88,5 +96,65 @@ public class ReservationService {
         if (reservationRepository.save(reservation) != null) {
             redisExchangeReservationService.deleteReservation(String.valueOf(reservation.getId()));
         }
+    }
+
+    /**
+     * Redis에 저장된 데이터 조회
+     */
+    public void getListReservation() {
+        log.info("Get List Reservation Init");
+        String uuid = UUID.randomUUID().toString();
+        log.info("Reservation UUID : " + uuid);
+        String lockKey = "lock:exchange:reservation:list";
+
+        Boolean lock = redisTemplate.opsForValue().setIfAbsent(lockKey, uuid, 30, TimeUnit.SECONDS);
+
+        if (Boolean.FALSE.equals(lock)) {
+            log.info("List lock failed");
+            return;
+        }
+
+
+        try{
+            Set<String> setList = redisExchangeReservationService.getListReservation();
+
+            for (String reservationId : setList) {
+                log.info("Log Data");
+                log.info("reservation Id : " + reservationId);
+            }
+        }
+        catch (Exception e){
+            log.info("Error Message : " + e.getMessage());
+        }
+//        finally {
+//            redisTemplate.execute(
+//                    unlockScript(),
+//                    Collections.singletonList(lockKey),
+//                    uuid
+//            );
+//        }
+    }
+
+    /**
+     * Lua unlock Script 작성
+     * 분산락을 작성 할 때는 무조건 Lua Script 사용하기
+     * - Lua Script를 작성하는 이유는 Redis 내에서의 원자성을 보장해주기 때문에
+     * @return
+     */
+    public DefaultRedisScript<Long> unlockScript() {
+
+        // 여기서 Long에 대한 부분은 Key 값에 대한 형을 설정하는 것이 아닌 scriptText에서의 return 값을 선택하는 것.
+        DefaultRedisScript<Long> lua = new DefaultRedisScript<>();
+
+        lua.setScriptText(
+                "if redis.call('GET', KEYS[1]) == ARGV[1] then " +
+                        "   return redis.call('DEL', KEYS[1]) " +
+                        "else " +
+                        "   return 0 " +
+                        "end"
+        );
+        lua.setResultType(Long.class);
+
+        return lua;
     }
 }
